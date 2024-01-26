@@ -155,8 +155,8 @@ training_wet$Class <- as.factor(training_wet$Class)
 # Visualisations
 # Subsets
 garden <- subset(training_wet, Class == 'Garden')
-agriculture <- subset(training_wet, Class == 'Agricultural')
-abandoned <- subset(training_wet, Class == 'Abandoned')
+agriculture <- subset(training_wet, Class == 'Agricultural field')
+abandoned <- subset(training_wet, Class == 'Abandoned field')
 garrigue <- subset(training_wet, Class == "Garrigue")
 maquis <- subset(training_wet, Class == "Maquis")
 steppe <- subset(training_wet, Class == "Steppe")
@@ -177,6 +177,25 @@ hist(steppe$NDVI, main = "Steppe", xlab = "NDVI", xlim = c(0, 1), col = "light b
 hist(woodland$NDVI, main = "Woodland", xlab = "NDVI", xlim = c(0, 1), col = "light green")
 hist(greenhouse$NDVI, main = "Greenhouse", xlab = "NDVI", xlim = c(0, 1), col = "black")
 hist(vineyard$NDVI, main = "Vineyard", xlab = "NDVI", xlim = c(0, 1), col = "purple")
+
+# Plot for the first class (e.g., Garden)
+plot(B8 ~ B11, data = garden, pch = ".", col = "green", xlim = c(0, 0.4), ylim = c(0, 0.5), xlab = "Band 8", ylab = "Band 11")
+
+# Add points for other classes
+points(B8 ~ B11, data = agriculture, pch = ".", col = "brown")
+points(B8 ~ B11, data = abandoned, pch = ".", col = "grey")
+points(B8 ~ B11, data = garrigue, pch = ".", col = "orange")
+points(B8 ~ B11, data = maquis, pch = ".", col = "dark green")
+points(B8 ~ B11, data = steppe, pch = ".", col = "light blue")
+points(B8 ~ B11, data = woodland, pch = ".", col = "light green")
+points(B8 ~ B11, data = greenhouse, pch = ".", col = "black")
+points(B8 ~ B11, data = vineyard, pch = ".", col = "purple")
+
+# Add a legend
+legend("topright", legend = c("Garden", "Agricultural field", "Abandoned field", "Garrigue", "Maquis", "Steppe", "Woodland", "Greenhouse", "Vineyard"), 
+       col = c("green", "brown", "grey", "orange", "dark green", "light blue", "light green", "black", "purple"), pch = ".", cex = 0.8)
+
+
 
 # Remove the 'ID' column from the training datasets before model training
 training_dry <- training_dry[, -which(names(training_dry) == "ID")]
@@ -205,6 +224,10 @@ names(modelRF_wet)
 # Since we set importance = "permutation", we now also have information 
 # on the statistical importance of each of our covariates which we can retrieve
 # using the importance() command.
+# The importance score is a measure of how much each variable contributes to the 
+# accuracy of the model. Higher scores indicate that the variable is more important 
+# for making accurate predictions. These scores are especially useful in understanding 
+# which variables (or features) the model is relying on most to make its decisions.
 importance(modelRF_dry)
 importance(modelRF_wet)
 
@@ -303,9 +326,9 @@ plot_classified_raster <- function(raster_layer, class_levels) {
 }
 
 # Define the classification levels and labels
-classification_scheme <- cbind(c(1, 2, 3, 4, 5, 6, 7, 8, 9), c(1, 2, 3, 4, 5, 6, 7, 8, 9), 
+classification_scheme <- cbind(c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 
                                c("Abandoned field", "Agricultural field", "Garden", "Garrigue", 
-                                 "Greenhouse", "Maquis", "Steppe", "Vineyard", "Woodland"))
+                                 "Greenhouse", "Maquis", "Steppe", "Urban", "Vineyard", "Woodland"))
 
 # Apply the function to both dry and wet classified rasters and visualize
 plot_classified_raster(predLC_dry, classification_scheme)
@@ -313,3 +336,66 @@ plot_classified_raster(predLC_wet, classification_scheme)
 
 
 
+
+#' Post-Classification Smoothing and Filtering
+#'
+#' This section applies spatial smoothing and majority filtering to the classified rasters.
+#' Spatial smoothing is achieved through a focal operation that recalculates each pixel's value
+#' to be the mean of its surrounding neighborhood. This is followed by a majority filter, which assigns
+#' the most common value within a focal window to each pixel. These steps help to reduce the "salt-and-pepper"
+#' effect common in classified images, leading to a cleaner visual representation.
+#'
+#' Optionally, the majority-filtered raster can be converted to vector polygons for further spatial analysis.
+#' This polygonization step groups adjacent pixels of the same class and represents them as single polygon features,
+#' which may be useful for analyses that require vector data formats.
+#'
+#' @param classified_raster A RasterLayer object that contains the classified data from the Random Forest model.
+#' @return The smoothed and filtered raster, and optionally a SpatialPolygonsDataFrame of the raster data.
+
+
+# Function to apply spatial smoothing and majority filtering
+smooth_and_filter <- function(classified_raster) {
+  # Define the modal function if not available
+  modal <- function(x) {
+    ux <- unique(na.omit(x))
+    if (length(ux) == 0) return(NA)
+    ux[which.max(tabulate(match(x, ux)))]
+  }
+  
+  # Apply spatial smoothing
+  smoothed_raster <- focal(classified_raster, w = matrix(1, 3, 3), fun = mean)
+  
+  # Apply majority filtering
+  majority_raster <- focal(smoothed_raster, w = matrix(1, 3, 3), fun = modal)
+  
+  return(majority_raster)
+}
+
+# Apply the smoothing and filtering function to the classified rasters
+majority_raster_dry <- smooth_and_filter(predLC_dry)
+majority_raster_wet <- smooth_and_filter(predLC_wet)
+
+# Assuming your majority-filtered rasters might still have floating point values
+# Reclassify the raster by rounding the values and then converting to integers
+reclassify_raster <- function(r) {
+  r[] <- round(r[], 0)  # Round the values to the nearest whole number
+  r <- calc(r, fun = as.integer)  # Convert the raster values to integers
+  return(r)
+}
+
+majority_raster_dry <- reclassify_raster(majority_raster_dry)
+majority_raster_wet <- reclassify_raster(majority_raster_wet)
+
+# Set NA values if any exist. Replace '9999' with an appropriate value that does not clash with your valid class values.
+majority_raster_dry[is.na(majority_raster_dry)] <- 9999
+majority_raster_wet[is.na(majority_raster_wet)] <- 9999
+
+# Save the majority-filtered raster
+writeRaster(majority_raster_dry, filename="C:/Ecostack/02_Projects/09_LULC/lulc/output/majority_raster_dry.tif", format="GTiff", overwrite=TRUE)
+writeRaster(majority_raster_wet, filename="C:/Ecostack/02_Projects/09_LULC/lulc/output/majority_raster_wet.tif", format="GTiff", overwrite=TRUE)
+
+# Set the NoData value to -9999 (or another appropriate number that isn't a valid class)
+writeRaster(majority_raster_dry, filename="C:/Ecostack/02_Projects/09_LULC/lulc/output/raster_dry.tif",
+            format="GTiff", datatype="INT4S", overwrite=TRUE, NAflag=-9999)
+writeRaster(majority_raster_wet, filename="C:/Ecostack/02_Projects/09_LULC/lulc/output/raster_wet.tif",
+            format="GTiff", datatype="INT4S", overwrite=TRUE, NAflag=-9999)
