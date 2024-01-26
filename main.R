@@ -163,20 +163,22 @@ steppe <- subset(training_wet, Class == "Steppe")
 woodland <- subset(training_wet, Class == "Woodland")
 greenhouse <- subset(training_wet, Class == "Greenhouse")
 vineyard <- subset(training_wet, Class == "Vineyard")
+urban <- subset(training_wet, class == "Urban")
 
 # NDVI
 dev.new(width = 8, height = 6)
 par(mar=c(2, 2, 2, 1))
 par(mfrow = c(9, 1), oma = c(2, 2, 2, 2), cex = 0.6, cex.axis = 0.6, cex.lab = 0.6)
 hist(garrigue$NDVI, main = "Garden", xlab = "NDVI", xlim = c(0, 1), col = "green")
-hist(garrigue$NDVI, main = "Agricultural", xlab = "NDVI", xlim = c(0, 1), col = "brown")
-hist(garrigue$NDVI, main = "Abandoned", xlab = "NDVI", xlim = c(0, 1), col = "grey")
+hist(garrigue$NDVI, main = "Agricultural field", xlab = "NDVI", xlim = c(0, 1), col = "brown")
+hist(garrigue$NDVI, main = "Abandoned field", xlab = "NDVI", xlim = c(0, 1), col = "grey")
 hist(garrigue$NDVI, main = "Garrigue", xlab = "NDVI", xlim = c(0, 1), col = "orange")
 hist(maquis$NDVI, main = "Maquis", xlab = "NDVI", xlim = c(0, 1), col = "dark green")
 hist(steppe$NDVI, main = "Steppe", xlab = "NDVI", xlim = c(0, 1), col = "light blue")
 hist(woodland$NDVI, main = "Woodland", xlab = "NDVI", xlim = c(0, 1), col = "light green")
 hist(greenhouse$NDVI, main = "Greenhouse", xlab = "NDVI", xlim = c(0, 1), col = "black")
 hist(vineyard$NDVI, main = "Vineyard", xlab = "NDVI", xlim = c(0, 1), col = "purple")
+hist(urban$NDVI, main = "Urban", xlab = "NDVI", xlim = c(0, 1), col = "yellow")
 
 # Plot for the first class (e.g., Garden)
 plot(B8 ~ B11, data = garden, pch = ".", col = "green", xlim = c(0, 0.4), ylim = c(0, 0.5), xlab = "Band 8", ylab = "Band 11")
@@ -190,10 +192,11 @@ points(B8 ~ B11, data = steppe, pch = ".", col = "light blue")
 points(B8 ~ B11, data = woodland, pch = ".", col = "light green")
 points(B8 ~ B11, data = greenhouse, pch = ".", col = "black")
 points(B8 ~ B11, data = vineyard, pch = ".", col = "purple")
+points(B8 ~ B11, data = urban, pch = ".", col = "urban")
 
 # Add a legend
-legend("topright", legend = c("Garden", "Agricultural field", "Abandoned field", "Garrigue", "Maquis", "Steppe", "Woodland", "Greenhouse", "Vineyard"), 
-       col = c("green", "brown", "grey", "orange", "dark green", "light blue", "light green", "black", "purple"), pch = ".", cex = 0.8)
+legend("topright", legend = c("Garden", "Agricultural field", "Abandoned field", "Garrigue", "Maquis", "Steppe", "Woodland", "Greenhouse", "Vineyard", "Urban"), 
+       col = c("green", "brown", "grey", "orange", "dark green", "light blue", "light green", "black", "purple", "yellow"), pch = ".", cex = 0.8)
 
 
 
