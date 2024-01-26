@@ -260,6 +260,36 @@ print(accuracies_wet)
 
 
 
+#' Accuracy and Kappa Statistic Assessment
+#'
+#' This section evaluates the model's performance using the out-of-bag (OOB) error estimate 
+#' and calculates the Kappa statistic. The OOB error is a method of measuring prediction 
+#' error in random forests. The Kappa statistic provides a measure of classification accuracy 
+#' adjusted for chance agreement.
+#'
+#' @param confusion_matrix A confusion matrix from the Random Forest model prediction.
+#' @return The Kappa statistic which indicates the classification accuracy.
+#'
+#' Example usage:
+#' kappa_stats_dry <- confusionMatrix(as.table(modelRF_dry$confusion.matrix))
+#' kappa_stats_wet <- confusionMatrix(as.table(modelRF_wet$confusion.matrix))
+
+# Calculate Kappa statistic for dry model
+conf_matrix_dry <- as.table(modelRF_dry$confusion.matrix)
+kappa_stats_dry <- confusionMatrix(conf_matrix_dry)
+kappa_dry <- kappa_stats_dry$overall['Kappa']
+
+# Calculate Kappa statistic for wet model
+conf_matrix_wet <- as.table(modelRF_wet$confusion.matrix)
+kappa_stats_wet <- confusionMatrix(conf_matrix_wet)
+kappa_wet <- kappa_stats_wet$overall['Kappa']
+
+# Print the Kappa statistics
+print(paste("Kappa Statistic for Dry Model:", kappa_dry))
+print(paste("Kappa Statistic for Wet Model:", kappa_wet))
+
+
+
 #' Predict Land Cover and Visualize Results
 #'
 #' After constructing the Random Forest models for both dry and wet datasets,
