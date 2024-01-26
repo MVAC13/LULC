@@ -420,10 +420,6 @@ majority_raster_wet <- reclassify_raster(majority_raster_wet)
 majority_raster_dry[is.na(majority_raster_dry)] <- 9999
 majority_raster_wet[is.na(majority_raster_wet)] <- 9999
 
-# Save the majority-filtered raster
-writeRaster(majority_raster_dry, filename="C:/Ecostack/02_Projects/09_LULC/lulc/output/majority_raster_dry.tif", format="GTiff", overwrite=TRUE)
-writeRaster(majority_raster_wet, filename="C:/Ecostack/02_Projects/09_LULC/lulc/output/majority_raster_wet.tif", format="GTiff", overwrite=TRUE)
-
 # Set the NoData value to -9999 (or another appropriate number that isn't a valid class)
 writeRaster(majority_raster_dry, filename="C:/Ecostack/02_Projects/09_LULC/lulc/output/raster_dry.tif",
             format="GTiff", datatype="INT4S", overwrite=TRUE, NAflag=-9999)
